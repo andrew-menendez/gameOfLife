@@ -1,7 +1,10 @@
+ 
+
 var gameOfLife = {
-  width: 12,
-  height: 12,
-  stepInterval: null,
+  width: 18,
+  height: 14,
+  stepInterval: 300,
+  running:-1,
 
   createAndShowBoard: function () {
     // create <table> element
@@ -49,7 +52,6 @@ var gameOfLife = {
     // EXAMPLE FOR ONE CELL
     // Here is how we would catch a click event on just the 0-0 cell
     // You need to add the click event on EVERY cell on the board
-    
     var onCellClick = function (e) {
       // QUESTION TO ASK YOURSELF: What is "this" equal to here?
       
@@ -63,8 +65,64 @@ var gameOfLife = {
       }
     };
     
-    var cell00 = document.getElementById('0-0');
-    cell00.onclick = onCellClick;
+    for (var i=0;i<this.width;i++){
+      for(var j=0;j<this.height;j++){
+        var dimension=(i+"-"+j);
+        var cell = document.getElementById(dimension);
+        cell.onclick = onCellClick;
+      }
+    }
+   
+      document.getElementById('clear_btn').onclick = function(e){
+        if(gameOfLife.running!=-1){
+          gameOfLife.disableAutoPlay();
+        };
+        
+          for (var i=0;i<gameOfLife.width;i++){
+            for(var j=0;j<gameOfLife.height;j++){
+              var dimension=(i+"-"+j);
+              var cell = document.getElementById(dimension);
+              cell.className = "dead";
+              cell.setAttribute('data-status', 'dead');
+              }
+            }
+          };
+      
+      document.getElementById('reset_btn').onclick = function(e){
+          var probability = 0.3;
+          for (var i=0;i<gameOfLife.width;i++){
+            for(var j=0;j<gameOfLife.height;j++){
+              var dimension=(i+"-"+j);
+              var cell = document.getElementById(dimension);
+              if (Math.random()<probability){
+                cell.className = "alive";
+                cell.setAttribute('data-status', 'dead');
+              }
+              else {
+                cell.className = "dead";
+                cell.setAttribute('data-status', 'dead');
+              }
+            }
+          }
+      };
+      
+      document.getElementById('step_btn').onclick = function(e){
+          gameOfLife.step();
+          };
+          
+      document.getElementById('play_btn').onclick = function(e){
+          
+          if(this.innerText == 'Play')
+          {
+            gameOfLife.enableAutoPlay();  
+            this.innerText = "Pause";
+          }
+          else
+          {
+            gameOfLife.disableAutoPlay();
+            this.innerText = "Play";
+          }
+      };
   },
 
   step: function () {
@@ -75,15 +133,90 @@ var gameOfLife = {
     //
     // You need to:
     // 1. Count alive neighbors for all cells
+    var livingNeighbors= function(row,column){
+      var LN = 0;
+      for (var i=row-1;i<row+2;i++){
+        for (var j = column-1;j<column+2;j++){
+              var dimension=(i+"-"+j);
+              var cell = document.getElementById(dimension);
+              if (!(j===column && i===row) && !!cell && cell.className === "alive"){
+                  LN++;
+              }
+        }
+      }
+      return LN;
+    };
     // 2. Set the next state of all cells based on their alive neighbors
+    var willBeAlive= function(row,column){
+      var dimension=(row+"-"+column);
+      var cell = document.getElementById(dimension);
+      var status=cell.getAttribute("data-status");
+      var LN=livingNeighbors(row,column);
+      
+      if(status==='dead'){
+        if (LN===3){
+          return true;
+        } else return false
+      };
+      
+        if (status==='alive'){
+            if(LN<2 || LN>3){
+              return false;
+            } else return true;
+         }
+    };// end of willBeAlive
+
+
+var makeBirthArray=function(){
+  var birthArray=[];  
     
+     for (var i=0;i<gameOfLife.width;i++){
+            for(var j=0;j<gameOfLife.height;j++){
+              var dimension=(i+"-"+j);
+              
+              var aliveStatus=willBeAlive(i,j);
+              
+              birthArray.push([dimension,aliveStatus]);
+            }  
+      
+    } 
+    return birthArray;
+};
+    
+var birthArray=makeBirthArray();
+
+console.dir(birthArray);
+
+for(var i = 0; i < birthArray.length; i++){
+  var dim = birthArray[i][0];
+  if(birthArray[i][1]) {
+    document.getElementById(dim).setAttribute('data-status','alive');
+    document.getElementById(dim).className = 'alive';
+  }
+  else {
+    document.getElementById(dim).setAttribute('data-status','dead');
+    document.getElementById(dim).className = 'dead';
+  }
+}
+
+//console.dir(birthArray);
+
+    //console.log(willBeAlive(0,0))
   },
 
   enableAutoPlay: function () {
     // Start Auto-Play by running the 'step' function
     // automatically repeatedly every fixed time interval
-    
-  }
+       this.running=setInterval(this.step,300);
+    },
+  
+    disableAutoPlay: function () {
+    // Start Auto-Play by running the 'step' function
+    // automatically repeatedly every fixed time interval
+       clearInterval(this.running);
+       this.running=-1;
+    }
+
 };
 
   gameOfLife.createAndShowBoard();
